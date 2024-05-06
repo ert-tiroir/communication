@@ -4,7 +4,8 @@
 WiFiServer server;
 WiFiClient client; int hasClient = 0;
 
-const char* ssid, password;
+const char* ssid;
+const char* password;
 IPAddress ip; int port;
 
 int isClient = 0;
