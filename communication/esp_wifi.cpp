@@ -72,7 +72,7 @@ int esp_wifi_recv () {
     if (!rxpage) return 0;
     if (client.available() < rxbuf->pag_size) return 0;
 
-    client.receive(rxpage, rxbuf->pag_size);
+    client.read(rxpage, rxbuf->pag_size);
 
     free_read(rxbuf);
     return 1;
