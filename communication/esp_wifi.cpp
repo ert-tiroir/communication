@@ -72,9 +72,9 @@ int esp_wifi_recv () {
     if (!rxpage) return 0;
     if (client.available() < rxbuf->pag_size) return 0;
 
-    client.recv(rxpage, rxbuf->pag_size);
+    client.receive(rxpage, rxbuf->pag_size);
 
-    free_page(rxbuf);
+    free_read(rxbuf);
     return 1;
 }
 void esp_wifi_send (unsigned char* buffer, unsigned int size) {
@@ -98,7 +98,7 @@ int esp_wifi_tick () {
     esp_wifi_recv();
 
     if (amount != 0) {
-        unsigned char* write_page = writeable_page(txbuf);
+        unsigned char* write_page = writable_page(txbuf);
         if (!write_page) return 1;
     
         esp_wifi_send(write_page, txbuf->pag_size);
