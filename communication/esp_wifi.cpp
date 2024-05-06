@@ -4,7 +4,7 @@
 WiFiServer server;
 WiFiClient client; int hasClient = 0;
 
-unsigned char* ssid, password;
+const char* ssid, password;
 IPAddress ip; int port;
 
 int isClient = 0;
@@ -34,7 +34,7 @@ int esp_wifi_connect () {
     return esp_wifi_server_connect();
 }
 
-int esp_wifi_server_init (struct buffer_t *_rxbuf, unsigned char* ssid, unsigned char* password, int port) {
+int esp_wifi_server_init (struct buffer_t *_rxbuf, const char* ssid, const char* password, int port) {
     WiFi.mode(WIFI_AP);
     WiFi.softAP(ssid, password);
 
@@ -48,7 +48,7 @@ int esp_wifi_server_init (struct buffer_t *_rxbuf, unsigned char* ssid, unsigned
     server.begin(port);
     return 1;
 }
-int esp_wifi_client_init (struct buffer_t *_rxbuf, unsigned char* ssid, unsigned char* password, IPAddress _ip, int _port) {
+int esp_wifi_client_init (struct buffer_t *_rxbuf, const char* ssid, const char* password, IPAddress _ip, int _port) {
     isClient = 1;
     ip = _ip; port = _port;
 
