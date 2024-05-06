@@ -10,7 +10,8 @@ IPAddress ip; int port;
 
 int isClient = 0;
 
-struct buffer_t* rxbuf, txbuf;
+struct buffer_t* rxbuf;
+struct buffer_t* txbuf;
 unsigned int amount = 0;
 
 int esp_wifi_client_connect () {
@@ -55,7 +56,7 @@ int esp_wifi_client_init (struct buffer_t *_rxbuf, const char* ssid, const char*
 
     rxbuf = _rxbuf;
 
-    WiFi.mode(WIFI_SPA);
+    WiFi.mode(WIFI_STA);
     esp_wifi_client_connect();
     return 1;
 }
