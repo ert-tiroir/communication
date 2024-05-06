@@ -46,6 +46,7 @@ int esp_wifi_server_init (struct buffer_t *_rxbuf, unsigned char* ssid, unsigned
     WiFi.softAPConfig(ip, ip, nm);
 
     server.begin(port);
+    return 1;
 }
 int esp_wifi_client_init (struct buffer_t *_rxbuf, unsigned char* ssid, unsigned char* password, IPAddress _ip, int _port) {
     isClient = 1;
@@ -55,6 +56,7 @@ int esp_wifi_client_init (struct buffer_t *_rxbuf, unsigned char* ssid, unsigned
 
     WiFi.mode(WIFI_SPA);
     esp_wifi_client_connect();
+    return 1;
 }
 int esp_wifi_load (struct buffer_t *buffer, unsigned int page_amount) {
     if (amount != 0) return 0;
@@ -71,6 +73,7 @@ int esp_wifi_recv () {
     client.recv(rxpage, rxbuf->pag_size);
 
     free_page(rxbuf);
+    return 1;
 }
 void esp_wifi_send (unsigned char* buffer, unsigned int size) {
     int amount = 0;
