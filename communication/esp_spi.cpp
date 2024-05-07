@@ -2,6 +2,7 @@
 #include "communication/esp_spi.h"
 #include "driver/spi_slave.h"
 #include "Arduino.h"
+#include "logger.h"
 
 const int PAGE_SIZE = 1024;
 
@@ -26,8 +27,8 @@ int esp_spi_pgamn = 0;
 
 void spi_slave_post_setup_cb(spi_slave_transaction_t *trans)
 {
-    digitalWrite(SPI_AVL[SPI_AVL_offset], HIGH);
     digitalWrite(SPI_DS, spi_slave_has_data);
+    digitalWrite(SPI_AVL[SPI_AVL_offset], HIGH);
 }
 
 void spi_slave_post_trans_cb(spi_slave_transaction_t *trans)
@@ -39,12 +40,17 @@ void spi_slave_post_trans_cb(spi_slave_transaction_t *trans)
 }
 
 int esp_spi_init (struct buffer_t *rxbuf) {
+    log_info("Initializing SPI Slave");
+    log_debug("Init GPIO Pins");
     pinMode(SPI_AVL0,  OUTPUT);
     pinMode(SPI_AVL1,  OUTPUT);
     pinMode(SPI_DS,    OUTPUT);
     pinMode(SPI_DM_BS, INPUT);
     pinMode(SPI_DM_AS, INPUT);
 
+    esp_spi_rxbuf = rxbuf;
+
+    log_debug("Init SPI");
     esp_err_t ret;
     spi_bus_config_t buscfg = {
         .mosi_io_num = MOSI,
@@ -71,6 +77,7 @@ int esp_spi_init (struct buffer_t *rxbuf) {
 
     if (ret != ESP_OK)
     {
+        log_error("SPI Could not be initialized");
         return 0;
     }
 
@@ -78,13 +85,14 @@ int esp_spi_init (struct buffer_t *rxbuf) {
 }
 int esp_spi_load (struct buffer_t *buffer, unsigned int page_amount) {
     if (esp_spi_pgamn != 0) return 0;
+    log_debug("Successfully loaded buffer into SPI");
     esp_spi_txbuf = buffer;
     esp_spi_pgamn = page_amount;
     return 1;
 }
 int esp_spi_tick () {
     unsigned char* write_page = writable_page(esp_spi_rxbuf);
-    if (!write_page) return ;
+    if (!write_page) return 0;
 
     spi_slave_has_data  = LOW;
     spi_master_has_data = 0;
@@ -105,7 +113,7 @@ int esp_spi_tick () {
 
     if (digitalRead(SPI_DM_BS)) spi_master_has_data = 1;
 
-    if (!(spi_slave_has_data || spi_master_has_data)) return ;
+    if (!(spi_slave_has_data || spi_master_has_data)) return 0;
 
     spi_slave_transaction_t t;
     memset(&t, 0, sizeof(t));
@@ -114,9 +122,23 @@ int esp_spi_tick () {
     t.trans_len = PAGE_SIZE * 8;
     t.rx_buffer = write_page;
     t.tx_buffer = write_page;
+    __log_debug({
+        slogger("Starting transmission, DM=");
+        ilogger(spi_master_has_data);
+        slogger(", DS=");
+        ilogger(spi_slave_has_data);
+    });
     esp_err_t ret = spi_slave_transmit(SPI2_HOST, &t, portMAX_DELAY);
 
     if (digitalRead(SPI_DM_AS)) spi_master_has_data = 1;
+    __log_debug({
+        slogger("Ended transmission, DM=");
+        ilogger(spi_master_has_data);
+        slogger(", DS=");
+        ilogger(spi_slave_has_data);
+    })
 
-    free_write(esp_spi_rxbuf);
+    if (spi_master_has_data)
+        free_write(esp_spi_rxbuf);
+    return 1;
 }
