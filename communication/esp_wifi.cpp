@@ -33,7 +33,7 @@ int esp_wifi_client_connect () {
         int status = WiFi.begin(esp_wifi_ssid, esp_wifi_password);
         int retry  = 10;
         while (status != WL_CONNECTED) {
-            delay(100);
+            delay(250);
             if (retry == 0) {
                 log_danger("Could not connect to WiFi, timed out after 1 second");
                 __log_danger({
