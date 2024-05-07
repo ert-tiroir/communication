@@ -1,2 +1,5 @@
 wiringPi.h
 wiringPiSPI.h
+driver
+Arduino.h
+WiFi.h
