@@ -4,7 +4,7 @@
 #include "Arduino.h"
 
 void start_logger (const char* type) {
-    printf("[%d][%s] ", time(), type);
+    printf("[%ld][%s] ", millis(), type);
 }
 void end_logger () {
     printf("\n");
