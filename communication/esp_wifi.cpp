@@ -19,7 +19,7 @@ int esp_wifi_client_connect () {
     if (WiFi.status() == WL_CONNECTED && esp_wifi_client.connected())
         return 1;
     if (WiFi.status() != WL_CONNECTED) {
-        __log_info("Connecting to WiFi");
+        log_info("Connecting to WiFi");
         if (esp_wifi_client.connected())
             esp_wifi_client.stop();
 
@@ -35,7 +35,7 @@ int esp_wifi_client_connect () {
         while (status != WL_CONNECTED) {
             delay(100);
             if (retry == 0) {
-                __log_danger("Could not connect to WiFi, timed out after 1 second");
+                log_danger("Could not connect to WiFi, timed out after 1 second");
                 __log_danger({
                     slogger("WiFi parameters are ssid='");
                     slogger(esp_wifi_ssid);
@@ -49,25 +49,25 @@ int esp_wifi_client_connect () {
             continue ;
         }
 
-        __log_debug("Successfully connected to WiFi");
+        log_debug("Successfully connected to WiFi");
     }
 
     if (esp_wifi_client.connected()) return 1;
 
-    __log_info("Connecting to server...");
+    log_info("Connecting to server...");
 
-    esp_wifi_client.connect(ip, port);
+    esp_wifi_client.connect(esp_wifi_host_ip, esp_wifi_host_port);
     while (!esp_wifi_client.connected()) delay(10);
 
-    __log_info("Successfully connected to server.");
+    log_info("Successfully connected to server.");
 
     return 1;
 }
 int esp_wifi_server_connect () {
-    WiFiClient newClient = server.available();
+    WiFiClient newClient = esp_wifi_server.available();
     if (!newClient) return esp_wifi_client.connected();
 
-    __log_info("New client connected itself to the network.");
+    log_info("New client connected itself to the network.");
     esp_wifi_client = newClient;
     return 1;
 }
@@ -115,15 +115,15 @@ int esp_wifi_client_init (struct buffer_t *_rxbuf, const char* _ssid, const char
 
     esp_wifi_rxbuf = _rxbuf;
 
-    __log_info("Starting ESP WiFi Client");
-    __log_debug("Setting Mode to STA");
+    log_info("Starting ESP WiFi Client");
+    log_debug("Setting Mode to STA");
     WiFi.mode(WIFI_STA);
     esp_wifi_client_connect();
     return 1;
 }
 int esp_wifi_load (struct buffer_t *buffer, unsigned int page_amount) {
     if (esp_wifi_pgamn != 0) return 0;
-    __log_debug("New buffer was loaded into ESP WiFi client");
+    log_debug("New buffer was loaded into ESP WiFi client");
     esp_wifi_txbuf = buffer;
     esp_wifi_pgamn = page_amount;
     return 1;
@@ -132,20 +132,20 @@ int esp_wifi_load (struct buffer_t *buffer, unsigned int page_amount) {
 int esp_wifi_recv () {
     unsigned char* rxpage = writable_page(esp_wifi_rxbuf);
     if (rxpage == 0) {
-        __log_debug("No more pages to receive the data into");
+        log_debug("No more pages to receive the data into");
         return 0;
     }
     if (esp_wifi_client.available() < esp_wifi_rxbuf->pag_size) return 0;
 
-    __log_debug("Received a page from the client, reading it into the buffer");
+    log_debug("Received a page from the client, reading it into the buffer");
     esp_wifi_client.read(rxpage, esp_wifi_rxbuf->pag_size);
 
     free_write(esp_wifi_rxbuf);
     return 1;
 }
 void esp_wifi_send (unsigned char* buffer, unsigned int size) {
-    __log_debug("Writing data to the client");
-    int amount = 0;
+    log_debug("Writing data to the client");
+    int try_amount = 0;
     while (size > 0) {
         if (!esp_wifi_connect()) continue ;
 
@@ -154,9 +154,9 @@ void esp_wifi_send (unsigned char* buffer, unsigned int size) {
         size   -= amount;
         while (esp_wifi_recv()) {} 
         
-        amount ++;
-        if (size != 0 && amount >= 10) {
-            amount -= 10;
+        try_amount ++;
+        if (size != 0 && try_amount >= 10) {
+            try_amount -= 10;
             vTaskDelay(1);
         } 
     }
@@ -170,7 +170,7 @@ int esp_wifi_tick () {
         unsigned char* write_page = readable_page(esp_wifi_txbuf);
         if (write_page == 0) return 1;
 
-        __log_debug("Sending page to the other side");
+        log_debug("Sending page to the other side");
     
         esp_wifi_send(write_page, esp_wifi_txbuf->pag_size);
 
