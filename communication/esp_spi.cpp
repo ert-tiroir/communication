@@ -34,6 +34,7 @@ void spi_slave_post_setup_cb(spi_slave_transaction_t *trans)
 void spi_slave_post_trans_cb(spi_slave_transaction_t *trans)
 {
     digitalWrite(SPI_AVL[SPI_AVL_offset], LOW);
+    digitalWrite(SPI_DS, LOW);
     SPI_AVL_offset++;
     if (SPI_AVL_offset == SPI_AVL_SIZE)
         SPI_AVL_offset = 0;

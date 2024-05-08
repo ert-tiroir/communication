@@ -150,6 +150,7 @@ void esp_wifi_send (unsigned char* buffer, unsigned int size) {
         if (!esp_wifi_connect()) continue ;
 
         int amount = esp_wifi_client.write(buffer, size);
+        esp_wifi_client.flush();
         buffer += amount;
         size   -= amount;
         while (esp_wifi_recv()) {} 

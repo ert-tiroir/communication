@@ -14,7 +14,7 @@ const int rpi_spi_avl_size = 2;
 
 const int rpi_spi_ds    = 15;
 const int rpi_spi_dm_bs = 16;
-const int rpi_spi_dm_as = 11;
+const int rpi_spi_dm_as = 1;
 
 struct buffer_t *rpi_spi_rxbuf = 0;
 struct buffer_t *rpi_spi_txbuf = 0;
