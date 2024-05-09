@@ -55,18 +55,9 @@ int rpi_spi_tick () {
     
     int data_master = rpi_spi_pgamn != 0 && readable_page(rpi_spi_txbuf);
     int data_slave  = digitalRead(rpi_spi_ds) && (
-        rpi_spi_avl_offset == -1
+        (rpi_spi_avl_offset == -1 && (digitalRead(rpi_spi_avl_0) || digitalRead(rpi_spi_avl_1)))
         || digitalRead(SPI_AVL[rpi_spi_avl_offset])
     );
-    if (data_master) {
-        unsigned char* tx_page = readable_page(rpi_spi_txbuf);
-
-        for (int i = 0; i < pag_size(rpi_spi_txbuf); i ++)
-            rx_page[i] = tx_page[i];
-
-        rpi_spi_pgamn --;
-        free_read(rpi_spi_txbuf);
-    }
 
     if (!(data_master || data_slave)) return 1;
 
@@ -88,10 +79,21 @@ int rpi_spi_tick () {
         }
 
         cnt ++;
-        if (cnt >= 1000000) {
+        if (cnt >= 10000) {
+            if (rpi_spi_avl_offset == -1) return 0;
             rpi_spi_avl_offset = -1;
             cnt = 0;
         }
+    }
+
+    if (data_master) {
+        unsigned char* tx_page = readable_page(rpi_spi_txbuf);
+
+        for (int i = 0; i < pag_size(rpi_spi_txbuf); i ++)
+            rx_page[i] = tx_page[i];
+
+        rpi_spi_pgamn --;
+        free_read(rpi_spi_txbuf);
     }
 
     if (digitalRead(rpi_spi_ds)) data_slave = 1;
