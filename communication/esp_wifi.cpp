@@ -135,10 +135,11 @@ int esp_wifi_recv () {
         log_debug("No more pages to receive the data into");
         return 0;
     }
-    if (esp_wifi_client.available() < esp_wifi_rxbuf->pag_size) return 0;
+    if (esp_wifi_client.available() < esp_wifi_rxbuf->pag_size - 1) return 0;
 
     log_debug("Received a page from the client, reading it into the buffer");
-    esp_wifi_client.read(rxpage, esp_wifi_rxbuf->pag_size);
+    esp_wifi_client.read(rxpage + 1, esp_wifi_rxbuf->pag_size);
+    rxpage[0] = 1;
 
     free_write(esp_wifi_rxbuf);
     return 1;
@@ -173,7 +174,7 @@ int esp_wifi_tick () {
 
         log_debug("Sending page to the other side");
     
-        esp_wifi_send(write_page, esp_wifi_txbuf->pag_size);
+        esp_wifi_send(write_page + 1, esp_wifi_txbuf->pag_size - 1);
 
         free_read(esp_wifi_txbuf);
         esp_wifi_pgamn --;

@@ -6,14 +6,10 @@
 
 const int PAGE_SIZE = 1024;
 
-const int SPI_DS    = 6;
-const int SPI_DM_BS = 5;
-const int SPI_DM_AS = 4;
+const int GPIO_RS[2] = { 1, 2 };
 
-const int SPI_AVL0 = 17;
-const int SPI_AVL1 = 18;
+const int GPIO_RM = 42;
 
-int SPI_AVL[2] = {SPI_AVL0, SPI_AVL1};
 int SPI_AVL_offset = 0;
 
 const int SPI_AVL_SIZE = 2;
@@ -27,14 +23,12 @@ int esp_spi_pgamn = 0;
 
 void spi_slave_post_setup_cb(spi_slave_transaction_t *trans)
 {
-    digitalWrite(SPI_DS, spi_slave_has_data);
-    digitalWrite(SPI_AVL[SPI_AVL_offset], HIGH);
+    digitalWrite(GPIO_RS[SPI_AVL_offset], HIGH);
 }
 
 void spi_slave_post_trans_cb(spi_slave_transaction_t *trans)
 {
-    digitalWrite(SPI_AVL[SPI_AVL_offset], LOW);
-    digitalWrite(SPI_DS, LOW);
+    digitalWrite(GPIO_RS[SPI_AVL_offset], LOW);
     SPI_AVL_offset++;
     if (SPI_AVL_offset == SPI_AVL_SIZE)
         SPI_AVL_offset = 0;
@@ -43,11 +37,9 @@ void spi_slave_post_trans_cb(spi_slave_transaction_t *trans)
 int esp_spi_init (struct buffer_t *rxbuf) {
     log_info("Initializing SPI Slave");
     log_debug("Init GPIO Pins");
-    pinMode(SPI_AVL0,  OUTPUT);
-    pinMode(SPI_AVL1,  OUTPUT);
-    pinMode(SPI_DS,    OUTPUT);
-    pinMode(SPI_DM_BS, INPUT);
-    pinMode(SPI_DM_AS, INPUT);
+    pinMode(GPIO_RS[0], OUTPUT);
+    pinMode(GPIO_RS[1], OUTPUT);
+    pinMode(GPIO_RM,    INPUT);
 
     esp_spi_rxbuf = rxbuf;
 
@@ -101,8 +93,10 @@ int esp_spi_tick () {
     if (esp_spi_pgamn != 0) {
         unsigned char* page = readable_page(esp_spi_txbuf);
 
+        write_page[0] = 0;
         if (page) {
-            for (int i = 0; i < PAGE_SIZE; i ++)
+            write_page[0] = 1;
+            for (int i = 1; i < PAGE_SIZE; i ++)
                 write_page[i] = page[i];
 
             spi_slave_has_data = HIGH;
@@ -112,9 +106,7 @@ int esp_spi_tick () {
         }
     }
 
-    if (digitalRead(SPI_DM_BS)) spi_master_has_data = 1;
-
-    if (!(spi_slave_has_data || spi_master_has_data)) return 0;
+    if (!(spi_slave_has_data || digitalRead(GPIO_RM) != LOW)) return 0;
 
     spi_slave_transaction_t t;
     memset(&t, 0, sizeof(t));
@@ -123,23 +115,9 @@ int esp_spi_tick () {
     t.trans_len = PAGE_SIZE * 8;
     t.rx_buffer = write_page;
     t.tx_buffer = write_page;
-    __log_debug({
-        slogger("Starting transmission, DM=");
-        ilogger(spi_master_has_data);
-        slogger(", DS=");
-        ilogger(spi_slave_has_data);
-    });
     esp_err_t ret = spi_slave_transmit(SPI2_HOST, &t, portMAX_DELAY);
 
-    if (digitalRead(SPI_DM_AS)) spi_master_has_data = 1;
-    __log_debug({
-        slogger("Ended transmission, DM=");
-        ilogger(spi_master_has_data);
-        slogger(", DS=");
-        ilogger(spi_slave_has_data);
-    })
-
-    if (spi_master_has_data)
+    if (write_page[0] != 0)
         free_write(esp_spi_rxbuf);
     return 1;
 }
