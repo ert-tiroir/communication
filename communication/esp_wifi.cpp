@@ -138,7 +138,7 @@ int esp_wifi_recv () {
     if (esp_wifi_client.available() < esp_wifi_rxbuf->pag_size - 1) return 0;
 
     log_debug("Received a page from the client, reading it into the buffer");
-    esp_wifi_client.read(rxpage + 1, esp_wifi_rxbuf->pag_size);
+    esp_wifi_client.read(rxpage + 1, esp_wifi_rxbuf->pag_size - 1);
     rxpage[0] = 1;
 
     free_write(esp_wifi_rxbuf);
