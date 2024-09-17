@@ -90,10 +90,10 @@ int esp_spi_tick () {
     spi_slave_has_data  = LOW;
     spi_master_has_data = 0;
 
+    write_page[0] = 0;
     if (esp_spi_pgamn != 0) {
         unsigned char* page = readable_page(esp_spi_txbuf);
 
-        write_page[0] = 0;
         if (page) {
             write_page[0] = 1;
             for (int i = 1; i < PAGE_SIZE; i ++)
